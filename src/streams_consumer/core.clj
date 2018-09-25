@@ -15,24 +15,20 @@
 
 
 (defn ^ValueMapper value-mapper [f]
-  (reify ValueMapper (apply [_ v] (f v))))
+  (reify ValueMapper (apply [_ v]
+                       (-> v
+                           nippy/thaw
+                           f
+                           nippy/freeze))))
 
 (defn some-transform [v]
-  (-> v
-      nippy/thaw
-      (assoc :test 99999)
-      nippy/freeze)
-  )
+  (assoc v :test 99999))
 
 (defn topology []
-  (let [sb (StreamsBuilder.)
-        kstream (.stream sb "new-in")]
-
-    (-> kstream
-        (.mapValues (value-mapper some-transform))
-        (.to "new-out"))
-
-    (.build sb)))
+  (-> (StreamsBuilder.)
+      (.stream "new-in-2")
+      (.mapValues (value-mapper some-transform))
+      (.to "new-out-2")))
 
 (defn streams []
   (KafkaStreams. (topology) (streams-config)))
