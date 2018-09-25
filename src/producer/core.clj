@@ -1,4 +1,4 @@
-(ns kafka-producer.core
+(ns producer.core
   (:require [taoensso.nippy :as nippy])
   (:import [org.apache.kafka.clients.producer KafkaProducer ProducerConfig ProducerRecord]
            [org.apache.kafka.common.serialization ByteArraySerializer StringSerializer]))
@@ -13,15 +13,16 @@
 (def producer
   (KafkaProducer. producer-config))
 
-(defn send-to-topic! [topic v]
-  (let [record (ProducerRecord. topic (-> v nippy/freeze))]
-    (.send producer record)))
+(defn send! [record]
+  (.send producer record))
 
-(send-to-topic! "test" {:avx 24})
+(defn producer-record [topic k v]
+  (ProducerRecord. topic
+                   k
+                   (nippy/freeze v)))
+
 
 (comment
-  "Wait for response from send
-  capture timestamp or event id
-  retry on fail to send
-  "
-  )
+  "Use the below function to add to a topic"
+  (-> (producer-record "some-topic" "some-key" {:avx 24})
+      send!))
